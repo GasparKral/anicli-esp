@@ -1,8 +1,8 @@
-use std::process::{Command, Stdio};
-
 use anyhow::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::prelude::*;
+use std::process::{Command, Stdio};
+use std::time::Duration;
 
 use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::DefaultTerminal;
@@ -58,13 +58,17 @@ impl App<'_> {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event)
+        // Bloqueamos máximo 50ms, luego "tick"
+        if event::poll(Duration::from_millis(50))? {
+            match event::read()? {
+                Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                    self.handle_key_event(key_event)
+                }
+                _ => (),
             }
-            _ => (),
         }
-
+        // Siempre chequeamos el timer, haya evento o no
+        self.list.tick();
         Ok(())
     }
 
